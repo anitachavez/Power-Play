@@ -43,12 +43,12 @@ public class Teleoperado extends LinearOpMode {
             double currentTime = timer.milliseconds();
             double axial   = -gamepad1.left_stick_y;
             double lateral =  gamepad1.left_stick_x;
-            double yaw     = -gamepad1.right_stick_x;
+            double yaw     = gamepad1.right_stick_x;
 
-            double leftFrontTarget  = axial - lateral + yaw;
-            double rightFrontTarget = axial + lateral - yaw;
-            double leftBackTarget   = axial + lateral + yaw;
-            double rightBackTarget  = axial - lateral - yaw;
+            double leftFrontTarget  = axial - lateral - yaw;
+            double rightFrontTarget = axial + lateral + yaw;
+            double leftBackTarget   = axial + lateral - yaw;
+            double rightBackTarget  = axial - lateral + yaw;
 
             double max = Math.max(Math.abs(leftFrontTarget), Math.abs(rightFrontTarget));
             max = Math.max(max, Math.abs(leftBackTarget));
@@ -81,9 +81,10 @@ public class Teleoperado extends LinearOpMode {
     
     double getIncreasedPower(double current, double target) {
         double diff = target - current;
+        if(diff == 0)
+            return current;
         double absDiff = Math.abs(diff);
         double sign = diff / absDiff;
-        telemetry.addData("", sign);
         double valueToIncrement = sign * Math.min(absDiff, MOTOR_POWER_INCREMENT);
         return current + valueToIncrement;
     }
