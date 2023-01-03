@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.util.Range;
 
 public class RampMotor extends DcMotorImpl {
 
-    private static final double INCREMENT = 0.05, MIN = -0.8, MAX = 0.8;
+    private static final double INCREMENT = 0.05, MIN = -1.0, MAX = 1.0;
     private boolean rampUp = true;
     private double power;
 
