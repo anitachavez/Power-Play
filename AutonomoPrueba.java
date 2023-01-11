@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 @Autonomous(name = "Autonomo")
 
 public class AutonomoPrueba extends LinearOpMode{
+  double tgtPower = 0;
     int TICKS_PER_CM = 25;
     double AUTONOMOUS_SPEED = 0.2;
     BNO055IMU imu;
@@ -46,6 +47,24 @@ public class AutonomoPrueba extends LinearOpMode{
         //turnRight(0);
           //****GIRO IZQ****
         //turnLeft(0);
+
+
+/**           *****Servo*****
+  motorTest.setPower(tgtPower);
+  if(gamepad1.y) {
+      servoTest.setPosition(0);
+  } else if (gamepad1.x || gamepad1.b) {
+      servoTest.setPosition(0.5);
+  } else if (gamepad1.a) {
+      // move to 180 degrees.
+      servoTest.setPosition(1);
+  }
+    telemetry.addData("Servo Position", servoTest.getPosition());
+    telemetry.addData("Target Power", tgtPower);
+    telemetry.addData("Motor Power", motorTest.getPower());
+    telemetry.addData("Status", "Running");
+    telemetry.update();
+*/
     }
      public void initIMU() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
