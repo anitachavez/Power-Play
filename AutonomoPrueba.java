@@ -34,31 +34,18 @@ public class AutonomoPrueba extends LinearOpMode{
         imu = hardwareMap.get(BNO055IMU.class, "imu2");
         initIMU();
         waitForStart();
-            //****ADELANTE****
-        //moveAutonomous(180);
+            //****ADELANTE*****
+        //moveAutonomous(0);
             //****ATRAS****
-        // moveAutonomous(-10);
+        // moveAutonomous(-0);
             //****LATERAL IZQ****
-        //moveAutonomousLateral(20);
-        //sleep(1000);
-        //moveAutonomousLateral(20);
-
-        /**moveAutonomous(180);
-        sleep(100);
-        moveAutonomous(-90);
-        sleep(100);
-        moveAutonomousLateral(20);
-        sleep(100);
-        moveAutonomousLateral(-20);
-        sleep(100);
-        moveAutonomousLateral(-20);
-        sleep(100);
-        moveAutonomousLateral(20);
-        sleep(100);
-        moveAutonomous(-90);
-        */
-        //turnLeft(45);
-        turnRight(45);
+        //moveAutonomousLateral(0);
+          //****LATERAL DER****
+        //moveAutonomousLateral(-0);
+          //****GIRO DER****
+        //turnRight(0);
+          //****GIRO IZQ****
+        //turnLeft(0);
     }
      public void initIMU() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
