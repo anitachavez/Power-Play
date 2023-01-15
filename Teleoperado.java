@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="Teleoperado")
 public class Teleoperado extends LinearOpMode {
     final double UPDATE_PERIOD_MS = 50;
-    final double MOTOR_POWER_INCREMENT = 1;
+    final double MOTOR_POWER_INCREMENT = 0.065;
 
     final int LEFT_FRONT_POWER = 0;
     final int RIGHT_FRONT_POWER = 1;
@@ -66,10 +66,10 @@ public class Teleoperado extends LinearOpMode {
         chasisPowers[RIGHT_FRONT_POWER] = getIncreasedPower(robot.rightFrontDrive.getPower(), rightFrontTarget);
         chasisPowers[LEFT_BACK_POWER] = getIncreasedPower(robot.leftBackDrive.getPower(), leftBackTarget);
         chasisPowers[RIGHT_BACK_POWER] = getIncreasedPower(robot.rightBackDrive.getPower(), rightBackTarget);
-        telemetry.addData("LF", robot.leftFrontDrive.getPower() + " " + chasisPowers[LEFT_FRONT_POWER]);
-        telemetry.addData("RF", robot.rightFrontDrive.getPower() + " " + chasisPowers[RIGHT_FRONT_POWER]);
-        telemetry.addData("LB", robot.leftBackDrive.getPower() + " " + chasisPowers[LEFT_BACK_POWER]);
-        telemetry.addData("RB", robot.rightBackDrive.getPower() + " " + chasisPowers[RIGHT_BACK_POWER]);
+        telemetry.addData("LF", leftFrontTarget + " " + chasisPowers[LEFT_FRONT_POWER]);
+        telemetry.addData("RF", rightFrontTarget + " " + chasisPowers[RIGHT_FRONT_POWER]);
+        telemetry.addData("LB", leftBackTarget + " " + chasisPowers[LEFT_BACK_POWER]);
+        telemetry.addData("RB", rightBackTarget + " " + chasisPowers[RIGHT_BACK_POWER]);
         return chasisPowers;
     }
     

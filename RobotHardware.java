@@ -26,12 +26,30 @@ public class RobotHardware {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "front_right");
         rightBackDrive = hardwareMap.get(DcMotor.class, "back_right");
 
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         opMode.telemetry.addData("Status", "Initialized");
         opMode.telemetry.update();
+    }
+
+    public void logChasisPowers() {
+        opMode.telemetry.addData("LF", leftFrontDrive.getPower());
+        opMode.telemetry.addData("RF", rightFrontDrive.getPower());
+        opMode.telemetry.addData("LB", leftBackDrive.getPower());
+        opMode.telemetry.addData("RB", rightBackDrive.getPower());
+    }
+    
+    public void resetEncoders() {
+        setChasisRunMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    }
+
+    private void setChasisRunMode(DcMotor.RunMode runmode) {
+        leftFrontDrive.setMode(runmode);
+        leftBackDrive.setMode(runmode);
+        rightFrontDrive.setMode(runmode);
+        rightBackDrive.setMode(runmode);
     }
 }
