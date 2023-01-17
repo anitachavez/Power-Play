@@ -1,6 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -17,6 +23,10 @@ public class RobotHardware {
     private ElapsedTime timer = new ElapsedTime();
     private double lastMotorUpdateTime;
     private LinearOpMode opMode;
+    private VuforiaLocalizer vuforia;
+    private VuforiaTrackables trackables;
+    private double lastTracakbleSearchTime;
+    private TargetInfo identifiedTrackable;
 
     public RobotHardware(LinearOpMode opMode) {
         this.opMode = opMode;
@@ -37,10 +47,15 @@ public class RobotHardware {
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         lastMotorUpdateTime = timer.milliseconds();
+        lastTracakbleSearchTime = lastMotorUpdateTime;
 
         opMode.telemetry.addData("Status", "Initialized");
         opMode.telemetry.update();
     }
+
+    // ******************************************
+    // *                 CHASIS                 *
+    // ******************************************
 
     public void move(double drive, double lateral, double yaw) {
         double currentTime = timer.milliseconds();
@@ -103,5 +118,60 @@ public class RobotHardware {
         leftBackDrive.setMode(runmode);
         rightFrontDrive.setMode(runmode);
         rightBackDrive.setMode(runmode);
+    }
+
+    // ******************************************
+    // *                 VISION                 *
+    // ******************************************
+    private WebcamName webcamName;
+    public void initVuforia() {
+        webcamName = opMode.hardwareMap.get(WebcamName.class, "camara");
+        int cameraMonitorViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+        parameters.vuforiaLicenseKey = "ATjrkEL/////AAABmfR2/BPftkOFvL9kl5ElbHswfU6Tuno4QSB4aHpVUmWaWqKdEUps2CsnGbmjoGqMAfOjyPlhrew8njlemEsarH9XKySF9i0egaUhOiT2fE0MivatYaT037ZwPe1bOkI1GGmd2CsWL8GeupcT91XQkGhRcMyTS3ZfmDYu1/HmcRxCy4zxwbiyPVcoHtsh+KPfjI29mv9YfMStiB4/o8FgefPbTGtX6L9zeoyUemNIMN1WcaMi6wSM7rB7kF3VnUJCrXAca6YmFNEr6GEdJX4G7JhO5EiD6K/e1+wZ0fLtWiQDWe09Bgxxpp2n+qHeccA06zA8nNTo2F07UORoM40ZK29vMj4eh0GjyNMAOmWcuQeI";
+        parameters.useExtendedTracking = false;
+        parameters.cameraName = webcamName;
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+
+    public void initTfod() {
+
+    }
+
+    public void logIdentifiedTarget() {
+        TargetInfo trackable = getVisibleTrackable();
+        if (trackable == null)
+            opMode.telemetry.addData("Trackable:", "No visible target");
+        else {
+            opMode.telemetry.addData("Trackable:", trackable.name);
+            opMode.telemetry.addData("Trackable:", "X: (%.2f)  Y: (%.2f)  Z: (%.2f)", trackable.x, trackable.y, trackable.z);
+        }
+    }
+
+    public void startTracking() {
+        trackables = this.vuforia.loadTrackablesFromAsset("PowerPlay");
+        trackables.get(0).setName("Red Audience Wall");
+        trackables.get(1).setName("Red Rear Wall");
+        trackables.get(2).setName("Blue Audience Wall");
+        trackables.get(3).setName("Blue Rear Wall");
+        trackables.activate();
+    }
+
+    private TargetInfo getVisibleTrackable() {
+        double currentTime = timer.milliseconds();
+        if(currentTime - lastTracakbleSearchTime > 100) {
+            lastTracakbleSearchTime = currentTime;
+            for (VuforiaTrackable trackable : trackables) {
+                VuforiaTrackableDefaultListener targetListener = ((VuforiaTrackableDefaultListener) trackable.getListener());
+                boolean isTrackableVisible = targetListener.isVisible();
+                if(isTrackableVisible){
+                    identifiedTrackable = new TargetInfo(trackable);
+                    return identifiedTrackable;
+                }
+                    
+            }
+            return null;
+        }
+        return identifiedTrackable;
     }
 }
