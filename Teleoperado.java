@@ -13,11 +13,14 @@ public class Teleoperado extends LinearOpMode {
 
         waitForStart();
         while (opModeIsActive()) {
-            double axial   = -gamepad1.left_stick_y;
-            double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;
+            double powerMultiplier = 0.8;
+            double turnSensitivity = 0.8;
+            double axial   = -gamepad1.left_stick_y * powerMultiplier;
+            double lateral =  gamepad1.left_stick_x * powerMultiplier;
+            double yaw     =  gamepad1.right_stick_x * powerMultiplier * turnSensitivity;
             robot.move(axial, lateral, yaw);
             telemetry.update();
         }
     }
+    
 }
