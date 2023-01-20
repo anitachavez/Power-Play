@@ -41,9 +41,9 @@ public class RobotHardware {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "front_right");
         rightBackDrive = hardwareMap.get(DcMotor.class, "back_right");
 
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         lastMotorUpdateTime = timer.milliseconds();
@@ -60,10 +60,10 @@ public class RobotHardware {
     public void move(double drive, double lateral, double yaw) {
         double currentTime = timer.milliseconds();
         if (currentTime - lastMotorUpdateTime > MOTOR_UPDATE_PERIOD_MS) {
-            double leftFrontTarget  = drive - lateral - yaw;
-            double rightFrontTarget = drive + lateral + yaw;
-            double leftBackTarget   = drive + lateral - yaw;
-            double rightBackTarget  = drive - lateral + yaw;
+            double leftFrontTarget  = drive + lateral + yaw;
+            double rightFrontTarget = drive - lateral - yaw;
+            double leftBackTarget   = drive - lateral + yaw;
+            double rightBackTarget  = drive + lateral - yaw;
             // Normalise velocities
             double max = Math.max(Math.abs(leftFrontTarget), Math.abs(rightFrontTarget));
             max = Math.max(max, Math.abs(leftBackTarget));
@@ -80,10 +80,10 @@ public class RobotHardware {
             double leftBackPower   = getIncreasedPower(leftBackDrive.getPower(), leftBackTarget);
             double rightBackPower  = getIncreasedPower(rightBackDrive.getPower(), rightBackTarget);
             // Update velocities
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
+            leftFrontDrive.setPower(leftFrontTarget);
+            rightFrontDrive.setPower(rightFrontTarget);
+            leftBackDrive.setPower(leftBackTarget);
+            rightBackDrive.setPower(rightBackTarget);
             opMode.telemetry.addData("LF", leftFrontTarget + " " + leftFrontPower);
             opMode.telemetry.addData("RF", rightFrontTarget + " " + rightFrontPower);
             opMode.telemetry.addData("LB", leftBackTarget + " " + leftBackPower);
@@ -145,6 +145,32 @@ public class RobotHardware {
         else {
             opMode.telemetry.addData("Trackable:", trackable.name);
             opMode.telemetry.addData("Trackable:", "X: (%.2f)  Y: (%.2f)  Z: (%.2f)", trackable.x, trackable.y, trackable.z);
+        }
+    }
+    
+    public void followTarget() {
+        final double MM_PER_INCH = 25.40;
+        TargetInfo trackable = getVisibleTrackable();
+        if (trackable != null){
+            double targetX = trackable.x / MM_PER_INCH;
+            double targetY = trackable.z / MM_PER_INCH;
+            final double DESIRED_DISTANCE = 9;
+            final double SPEED_GAIN =   0.030 ;
+            final double TURN_GAIN  =   0.045 ; 
+
+            double targetRange = Math.hypot(targetX, targetY);
+
+            double targetBearing = Math.toDegrees(Math.asin(targetX / targetRange));
+            opMode.telemetry.addData("Trackable:", trackable.name);
+            opMode.telemetry.addData("Trackable:", "X: (%.2f) Z: (%.2f)", trackable.x, trackable.z);
+            
+            double  rangeError   = (targetRange - DESIRED_DISTANCE);
+            double  headingError = targetBearing;
+
+            double drive = rangeError * SPEED_GAIN;
+            double turn  = headingError * TURN_GAIN ;
+            
+            move(drive, 0, turn);
         }
     }
 

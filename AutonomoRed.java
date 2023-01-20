@@ -18,7 +18,7 @@ public class AutonomoRed extends LinearOpMode {
 
         waitForStart();
         while (opModeIsActive()) {
-            robot.logIdentifiedTarget();
+            robot.followTarget();
             telemetry.update();
         }
     }
