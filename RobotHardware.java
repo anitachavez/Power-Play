@@ -23,10 +23,13 @@ public class RobotHardware {
     private ElapsedTime timer = new ElapsedTime();
     private double lastMotorUpdateTime;
     private LinearOpMode opMode;
+    private WebcamName webcamName;
     private VuforiaLocalizer vuforia;
     private VuforiaTrackables trackables;
     private double lastTracakbleSearchTime;
     private TargetInfo identifiedTrackable;
+    
+    private boolean findTrackable = false;
 
     public RobotHardware(LinearOpMode opMode) {
         this.opMode = opMode;
@@ -123,7 +126,7 @@ public class RobotHardware {
     // ******************************************
     // *                 VISION                 *
     // ******************************************
-    private WebcamName webcamName;
+
     public void initVuforia() {
         webcamName = opMode.hardwareMap.get(WebcamName.class, "camara");
         int cameraMonitorViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
@@ -137,9 +140,13 @@ public class RobotHardware {
     public void initTfod() {
 
     }
-
+    
     public void logIdentifiedTarget() {
         TargetInfo trackable = getVisibleTrackable();
+        logIdentifiedTarget(trackable);
+    }
+
+    public void logIdentifiedTarget(TargetInfo trackable) {
         if (trackable == null)
             opMode.telemetry.addData("Trackable:", "No visible target");
         else {
@@ -157,20 +164,13 @@ public class RobotHardware {
             final double DESIRED_DISTANCE = 9;
             final double SPEED_GAIN =   0.030 ;
             final double TURN_GAIN  =   0.045 ; 
-
             double targetRange = Math.hypot(targetX, targetY);
-
             double targetBearing = Math.toDegrees(Math.asin(targetX / targetRange));
-            opMode.telemetry.addData("Trackable:", trackable.name);
-            opMode.telemetry.addData("Trackable:", "X: (%.2f) Z: (%.2f)", trackable.x, trackable.z);
-            
             double  rangeError   = (targetRange - DESIRED_DISTANCE);
             double  headingError = targetBearing;
-
             double drive = rangeError * SPEED_GAIN;
-            double turn  = headingError * TURN_GAIN ;
-            
-            move(drive, 0, turn);
+            double turn  = headingError * TURN_GAIN;
+            logIdentifiedTarget(trackable);
         }
     }
 
@@ -194,7 +194,6 @@ public class RobotHardware {
                     identifiedTrackable = new TargetInfo(trackable);
                     return identifiedTrackable;
                 }
-                    
             }
             return null;
         }
