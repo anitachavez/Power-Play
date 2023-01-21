@@ -54,15 +54,18 @@ public class RobotHardware {
         lastMotorUpdateTime = timer.milliseconds();
         lastTracakbleSearchTime = lastMotorUpdateTime;
 
+        //initializeMechanisms(hardwareMap);
+
+        opMode.telemetry.addData("Status", "Initialized");
+        opMode.telemetry.update();
+    }
+    
+    public void initializeMechanisms(HardwareMap hardwareMap) {
         elevatorRight = hardwareMap.get(DcMotor.class, "elevator_right");
         elevatorLeft = hardwareMap.get(DcMotor.class, "elevator_left");
         elevatorRight.setDirection(DcMotor.Direction.FORWARD);
         elevatorLeft.setDirection(DcMotor.Direction.REVERSE);
-
         intake = hardwareMap.get(Servo.class, "intake");
-
-        opMode.telemetry.addData("Status", "Initialized");
-        opMode.telemetry.update();
     }
 
     // ******************************************
@@ -189,11 +192,11 @@ public class RobotHardware {
         final double MM_PER_INCH = 25.40;
         TargetInfo trackable = getVisibleTrackable();
         if (trackable != null){
-            double targetX = trackable.x / MM_PER_INCH;
-            double targetY = trackable.z / MM_PER_INCH;
-            final double DESIRED_DISTANCE = 9;
-            final double SPEED_GAIN =   0.030 ;
-            final double TURN_GAIN  =   0.045 ; 
+            double targetX = trackable.x;
+            double targetY = trackable.z;
+            final double DESIRED_DISTANCE = MM_PER_INCH * 9;
+            final double SPEED_GAIN =   0.0012 ;
+            final double TURN_GAIN  =   0.0018 ; 
             double targetRange = Math.hypot(targetX, targetY);
             double targetBearing = Math.toDegrees(Math.asin(targetX / targetRange));
             double  rangeError   = (targetRange - DESIRED_DISTANCE);
@@ -202,6 +205,10 @@ public class RobotHardware {
             double turn  = headingError * TURN_GAIN;
             logIdentifiedTarget(trackable);
             move(drive, 0, turn);
+            opMode.telemetry.addData("Range error:", rangeError);
+            opMode.telemetry.addData("Heading error", headingError);
+            opMode.telemetry.addData("Drive:", drive);
+            opMode.telemetry.addData("Turn", turn);
         }
     }
 
@@ -218,15 +225,15 @@ public class RobotHardware {
         double currentTime = timer.milliseconds();
         if(currentTime - lastTracakbleSearchTime > 100) {
             lastTracakbleSearchTime = currentTime;
+            identifiedTrackable = null;
             for (VuforiaTrackable trackable : trackables) {
                 VuforiaTrackableDefaultListener targetListener = ((VuforiaTrackableDefaultListener) trackable.getListener());
                 boolean isTrackableVisible = targetListener.isVisible();
                 if(isTrackableVisible){
                     identifiedTrackable = new TargetInfo(trackable);
-                    return identifiedTrackable;
+                    break;
                 }
             }
-            return null;
         }
         return identifiedTrackable;
     }
