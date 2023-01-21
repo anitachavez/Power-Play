@@ -1,22 +1,27 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 
 public class RobotHardware {
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
+    public Servo intake;
+    public DcMotor elevatorRight, elevatorLeft;
 
+    final double ELEVATOR_RISE_POWER = 0.35;
+    final double ELEVATOR_LOWER_POWER = -ELEVATOR_RISE_POWER;
     final double MOTOR_UPDATE_PERIOD_MS = 50;
     final double MOTOR_POWER_INCREMENT = 0.065;
 
@@ -28,7 +33,6 @@ public class RobotHardware {
     private VuforiaTrackables trackables;
     private double lastTracakbleSearchTime;
     private TargetInfo identifiedTrackable;
-    
     private boolean findTrackable = false;
 
     public RobotHardware(LinearOpMode opMode) {
@@ -43,14 +47,19 @@ public class RobotHardware {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "back_left");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "front_right");
         rightBackDrive = hardwareMap.get(DcMotor.class, "back_right");
-
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-
         lastMotorUpdateTime = timer.milliseconds();
         lastTracakbleSearchTime = lastMotorUpdateTime;
+
+        elevatorRight = hardwareMap.get(DcMotor.class, "elevator_right");
+        elevatorLeft = hardwareMap.get(DcMotor.class, "elevator_left");
+        elevatorRight.setDirection(DcMotor.Direction.FORWARD);
+        elevatorLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        intake = hardwareMap.get(Servo.class, "intake");
 
         opMode.telemetry.addData("Status", "Initialized");
         opMode.telemetry.update();
@@ -111,7 +120,7 @@ public class RobotHardware {
         opMode.telemetry.addData("LB", leftBackDrive.getPower());
         opMode.telemetry.addData("RB", rightBackDrive.getPower());
     }
-    
+
     public void resetEncoders() {
         setChasisRunMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
@@ -124,9 +133,30 @@ public class RobotHardware {
     }
 
     // ******************************************
-    // *                 VISION                 *
+    // *                 INTAKE                 *
     // ******************************************
 
+    public void openIntake() {
+        double OPEN_POSITION = 0.45;
+        intake.setPosition(OPEN_POSITION);
+    }
+
+    public void closeIntake() {
+        double CLOSE_POSITION = 0;
+        intake.setPosition(CLOSE_POSITION);
+    }
+
+    // ********************
+    // *     ELEVATOR     *
+    // ********************
+    public void moveElevator(double power) {
+        elevatorRight.setPower(power);
+        elevatorLeft.setPower(power);
+    }
+
+    // ******************************************
+    // *                 VISION                 *
+    // ******************************************
     public void initVuforia() {
         webcamName = opMode.hardwareMap.get(WebcamName.class, "camara");
         int cameraMonitorViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
@@ -140,7 +170,7 @@ public class RobotHardware {
     public void initTfod() {
 
     }
-    
+
     public void logIdentifiedTarget() {
         TargetInfo trackable = getVisibleTrackable();
         logIdentifiedTarget(trackable);
@@ -154,7 +184,7 @@ public class RobotHardware {
             opMode.telemetry.addData("Trackable:", "X: (%.2f)  Y: (%.2f)  Z: (%.2f)", trackable.x, trackable.y, trackable.z);
         }
     }
-    
+
     public void followTarget() {
         final double MM_PER_INCH = 25.40;
         TargetInfo trackable = getVisibleTrackable();
@@ -171,6 +201,7 @@ public class RobotHardware {
             double drive = rangeError * SPEED_GAIN;
             double turn  = headingError * TURN_GAIN;
             logIdentifiedTarget(trackable);
+            move(drive, 0, turn);
         }
     }
 
