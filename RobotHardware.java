@@ -99,10 +99,10 @@ public class RobotHardware {
             rightFrontDrive.setPower(rightFrontTarget);
             leftBackDrive.setPower(leftBackTarget);
             rightBackDrive.setPower(rightBackTarget);
-            opMode.telemetry.addData("LF", leftFrontTarget + " " + leftFrontPower);
-            opMode.telemetry.addData("RF", rightFrontTarget + " " + rightFrontPower);
-            opMode.telemetry.addData("LB", leftBackTarget + " " + leftBackPower);
-            opMode.telemetry.addData("RB", rightBackTarget + " " + rightBackPower);
+            // opMode.telemetry.addData("LF", leftFrontTarget + " " + leftFrontPower);
+            // opMode.telemetry.addData("RF", rightFrontTarget + " " + rightFrontPower);
+            // opMode.telemetry.addData("LB", leftBackTarget + " " + leftBackPower);
+            // opMode.telemetry.addData("RB", rightBackTarget + " " + rightBackPower);
             lastMotorUpdateTime = currentTime;
         }
     }
@@ -209,6 +209,8 @@ public class RobotHardware {
             opMode.telemetry.addData("Heading error", headingError);
             opMode.telemetry.addData("Drive:", drive);
             opMode.telemetry.addData("Turn", turn);
+        } else {
+            move(0, 0, 0);
         }
     }
 
