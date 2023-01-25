@@ -13,7 +13,6 @@ public class Teleoperado extends LinearOpMode {
 
         waitForStart();
         boolean wasClicked = false, isIntakeClosed = true;
-        double state = 0;
 
         while (opModeIsActive()) {
             // **************************
@@ -41,13 +40,8 @@ public class Teleoperado extends LinearOpMode {
             // **************************
             // *     CONTROL INTAKE     *
             // **************************
-            if(!gamepad2.a && wasClicked)
-                isIntakeClosed =! isIntakeClosed;
-            wasClicked = gamepad2.a;
-            if(isIntakeClosed)
-                robot.closeIntake();
-            else
-                robot.openIntake();
+            if(gamepad2.a) robot.openIntake();
+            else robot.closeIntake();
             telemetry.update();
         }
     }
