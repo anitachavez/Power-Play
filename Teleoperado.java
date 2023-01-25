@@ -25,8 +25,8 @@ public class Teleoperado extends LinearOpMode {
                 powerMultiplier = 0.9;
             else if(gamepad1.right_trigger > 0)
                 powerMultiplier *= 0.5;
-            double axial   = -gamepad1.left_stick_y * powerMultiplier;
-            double lateral =  gamepad1.left_stick_x * powerMultiplier;
+            double axial   = getTangencialJoystick(-gamepad1.left_stick_y) * powerMultiplier;
+            double lateral =  getTangencialJoystick(gamepad1.left_stick_x) * powerMultiplier;
             double yaw     =  gamepad1.right_stick_x * powerMultiplier * turnSensitivity;
             robot.move(axial, lateral, yaw);
             // ****************************
@@ -50,6 +50,10 @@ public class Teleoperado extends LinearOpMode {
                 robot.openIntake();
             telemetry.update();
         }
+    }
+
+    private double getTangencialJoystick(double joystickInput) {
+        return 1.2 * Math.tan(0.7 * joystickInput);
     }
 
     private void getConnectionInfo(){
