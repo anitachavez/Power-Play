@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -7,6 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
+
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
@@ -19,8 +23,9 @@ public class RobotHardware {
     public DcMotor rightBackDrive;
     public Servo intake;
     public DcMotor elevatorRight, elevatorLeft;
+    public AnalogInput potentiometer;
 
-    final double ELEVATOR_RISE_POWER = 0.35;
+    final double ELEVATOR_RISE_POWER = 0.5;
     final double ELEVATOR_LOWER_POWER = -ELEVATOR_RISE_POWER;
     final double MOTOR_UPDATE_PERIOD_MS = 50;
     final double MOTOR_POWER_INCREMENT = 0.065;
@@ -54,18 +59,29 @@ public class RobotHardware {
         lastMotorUpdateTime = timer.milliseconds();
         lastTracakbleSearchTime = lastMotorUpdateTime;
 
-        //initializeMechanisms(hardwareMap);
+        initializeMechanisms(hardwareMap);
+        initializeSensors(hardwareMap);
 
         opMode.telemetry.addData("Status", "Initialized");
         opMode.telemetry.update();
     }
-    
+
     public void initializeMechanisms(HardwareMap hardwareMap) {
         elevatorRight = hardwareMap.get(DcMotor.class, "elevator_right");
         elevatorLeft = hardwareMap.get(DcMotor.class, "elevator_left");
         elevatorRight.setDirection(DcMotor.Direction.FORWARD);
         elevatorLeft.setDirection(DcMotor.Direction.REVERSE);
         intake = hardwareMap.get(Servo.class, "intake");
+        // In case the suspenders move the elevator
+        elevatorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        elevatorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        elevatorLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        elevatorRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        elevatorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        elevatorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    }
+    public void initializeSensors(HardwareMap hardwareMap){
+        potentiometer = hardwareMap.get(AnalogInput.class, "pot");
     }
 
     // ******************************************
@@ -153,8 +169,58 @@ public class RobotHardware {
     // *     ELEVATOR     *
     // ********************
     public void moveElevator(double power) {
+        elevatorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        elevatorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         elevatorRight.setPower(power);
         elevatorLeft.setPower(power);
+    }
+    public void showElevatorTicks(){
+        opMode.telemetry.addData("Left ticks", elevatorLeft.getCurrentPosition());
+        opMode.telemetry.addData("Right ticks", elevatorRight.getCurrentPosition());
+    }
+    public void showPotVoltage(){
+        opMode.telemetry.addData("Pot voltage", potentiometer.getVoltage());
+    }
+    public int moveToPosition(ElevatorPositions positions, double previousError){
+        int error = 0;
+        if(positions != null) {
+            PID encoderPID = new PID(-0.01, 0, 0);
+            int currentPosition = elevatorLeft.getCurrentPosition(),
+                    targetPosition = positions.TICKS_LEFT;
+            double corrections = encoderPID.correctionValue(currentPosition,
+                    targetPosition, previousError);
+            error = targetPosition - currentPosition;
+            //moveElevator(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
+            elevatorLeft.setTargetPosition(positions.TICKS_LEFT);
+            elevatorRight.setTargetPosition(positions.TICKS_RIGHT);
+            elevatorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            elevatorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            // TODO: Check for an asynchronous method, even a thread
+            while(elevatorLeft.isBusy() || elevatorLeft.isBusy()) {
+                elevatorLeft.setPower(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
+                elevatorRight.setPower(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
+                opMode.telemetry.addData("Values", "current (%d) target (%d) error (%d)",
+                        currentPosition, targetPosition, error);
+                opMode.telemetry.addLine("Corrections: " + corrections);
+            }
+        }
+        return error;
+    }
+
+    public double usePot(ElevatorPositions positions, double previousError){
+        if(positions != null) {
+            PID potPID = new PID(5, 0, 0.01);
+            double targetVoltage = positions.VOLTAGE,
+                    currentVoltage = potentiometer.getVoltage();
+            double error = targetVoltage - currentVoltage;
+            double corrections = potPID.correctionValue(currentVoltage, targetVoltage, previousError);
+            opMode.telemetry.addData("Values", "Error: (%.3f) Target: (%.3f) Current: (%.3f)",
+                    error, targetVoltage, currentVoltage);
+            opMode.telemetry.addLine("Correction: " + corrections);
+            moveElevator(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
+            return error;
+        }
+        return 0;
     }
 
     // ******************************************
@@ -196,7 +262,7 @@ public class RobotHardware {
             double targetY = trackable.z;
             final double DESIRED_DISTANCE = MM_PER_INCH * 9;
             final double SPEED_GAIN =   0.0012 ;
-            final double TURN_GAIN  =   0.0018 ; 
+            final double TURN_GAIN  =   0.0018 ;
             double targetRange = Math.hypot(targetX, targetY);
             double targetBearing = Math.toDegrees(Math.asin(targetX / targetRange));
             double  rangeError   = (targetRange - DESIRED_DISTANCE);
@@ -238,5 +304,19 @@ public class RobotHardware {
             }
         }
         return identifiedTrackable;
+    }
+}
+enum ElevatorPositions{
+    // TICS measured from ground level
+    GROUND(0.85, 0, 0),
+    LOW(0.62, 29, 25),
+    MEDIUM(0.41, 50, 47),
+    HIGH(0.065, 78, 71);
+    public final double VOLTAGE;
+    public final int TICKS_LEFT, TICKS_RIGHT;
+    ElevatorPositions(double voltage, int ticksLeft, int ticksRight){
+        VOLTAGE = voltage;
+        TICKS_LEFT = ticksLeft;
+        TICKS_RIGHT = ticksRight;
     }
 }

@@ -5,7 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 @TeleOp(name="Teleoperado")
 public class Teleoperado extends LinearOpMode {
-    private RobotHardware robot = new RobotHardware(this);
+    private final RobotHardware robot = new RobotHardware(this);
+    private double errorElevator = 0;
 
     @Override
     public void runOpMode() {
@@ -37,6 +38,14 @@ public class Teleoperado extends LinearOpMode {
                 robot.moveElevator(robot.ELEVATOR_LOWER_POWER);
             else
                 robot.moveElevator(0);
+            ElevatorPositions targetElevatorPosition = null;
+            if(gamepad2.dpad_down) targetElevatorPosition = ElevatorPositions.LOW;
+            else if(gamepad2.dpad_right) targetElevatorPosition = ElevatorPositions.MEDIUM;
+            else if(gamepad2.dpad_up) targetElevatorPosition = ElevatorPositions.HIGH;
+            else if(gamepad2.dpad_left) targetElevatorPosition = ElevatorPositions.GROUND;
+            errorElevator = robot.usePot(targetElevatorPosition, errorElevator);
+            robot.showElevatorTicks();
+            robot.showPotVoltage();
             // **************************
             // *     CONTROL INTAKE     *
             // **************************
