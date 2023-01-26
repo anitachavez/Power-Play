@@ -9,8 +9,12 @@ public class PID {
         this.D = d;
     }
     /**
-     * Correction values assumed
-     * It is not the best method, but derives from the literal concept of PID.
+     * Numerical approximations of a PID controller without modelling a function
+     * @param currentValue current value of the sensor
+     * @param expectedValue expected value for the sensor
+     * @param previousError previous significant error
+     * @param DELTA the time delta used for every measure
+     * @return the correction value for this sensor
      * */
     public double correctionValue(double currentValue, double expectedValue, double previousError, double DELTA){
         double currentError = currentValue - expectedValue, correction;
@@ -19,6 +23,13 @@ public class PID {
         correction += this.D * (previousError + currentError) / DELTA;
         return correction;
     }
+    /**
+     * Assumption of a time delta of 0.001
+     * @param currentValue current value of the sensor
+     * @param expectedValue expected value for the sensor
+     * @param previousError previous significant error
+     * @return the correction error considering a delta of 0.001
+     * */
     public double correctionValue(double currentValue, double expectedValue, double previousError){
         double DELTA = 0.001;
         return correctionValue(currentValue, expectedValue, previousError, DELTA);
