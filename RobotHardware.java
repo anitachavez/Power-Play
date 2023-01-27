@@ -184,24 +184,16 @@ public class RobotHardware {
     public int moveToPosition(ElevatorPositions positions, double previousError){
         int error = 0;
         if(positions != null) {
-            PID encoderPID = new PID(-0.01, 0, 0);
-            int currentPosition = elevatorLeft.getCurrentPosition(),
-                    targetPosition = positions.TICKS_LEFT;
-            double corrections = encoderPID.correctionValue(currentPosition,
-                    targetPosition, previousError);
-            error = targetPosition - currentPosition;
-            //moveElevator(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
-            elevatorLeft.setTargetPosition(positions.TICKS_LEFT);
-            elevatorRight.setTargetPosition(positions.TICKS_RIGHT);
             elevatorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             elevatorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            // TODO: Check for an asynchronous method, even a thread
-            while(elevatorLeft.isBusy() || elevatorLeft.isBusy()) {
-                elevatorLeft.setPower(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
-                elevatorRight.setPower(Range.clip(corrections, ELEVATOR_LOWER_POWER, ELEVATOR_RISE_POWER));
-                opMode.telemetry.addData("Values", "current (%d) target (%d) error (%d)",
-                        currentPosition, targetPosition, error);
-                opMode.telemetry.addLine("Corrections: " + corrections);
+            elevatorLeft.setTargetPosition(positions.TICKS_LEFT);
+            elevatorRight.setTargetPosition(positions.TICKS_RIGHT);
+            if(elevatorLeft.getCurrentPosition() < elevatorLeft.getTargetPosition()){
+                elevatorLeft.setPower(ELEVATOR_RISE_POWER);
+                elevatorRight.setPower(ELEVATOR_RISE_POWER);
+            } else{
+                elevatorLeft.setPower(ELEVATOR_LOWER_POWER);
+                elevatorRight.setPower(ELEVATOR_LOWER_POWER);
             }
         }
         return error;
