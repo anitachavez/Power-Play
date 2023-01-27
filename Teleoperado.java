@@ -5,14 +5,15 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 @TeleOp(name="Teleoperado")
 public class Teleoperado extends LinearOpMode {
-    private RobotHardware robot = new RobotHardware(this);
+    private final RobotHardware robot = new RobotHardware(this);
+    private double errorElevator = 0;
 
     @Override
     public void runOpMode() {
         robot.initializeHardware(hardwareMap);
 
         waitForStart();
-        boolean wasClicked = false, isIntakeClosed = true;
+        boolean wasClickedStart = false, usePot = true;
 
         while (opModeIsActive()) {
             // **************************
@@ -31,17 +32,31 @@ public class Teleoperado extends LinearOpMode {
             // ****************************
             // *     CONTROL ELEVADOR     *
             // ****************************
+            // Decide if use encoders or pot
+            if(gamepad2.start && wasClickedStart != gamepad2.start)
+                usePot = !usePot;
+
+            ElevatorPositions targetElevatorPosition = null;
             if(gamepad2.right_trigger > 0)
                 robot.moveElevator(robot.ELEVATOR_RISE_POWER);
             else if(gamepad2.left_trigger > 0)
                 robot.moveElevator(robot.ELEVATOR_LOWER_POWER);
-            else
-                robot.moveElevator(0);
+            else if(gamepad2.dpad_down) targetElevatorPosition = ElevatorPositions.LOW;
+            else if(gamepad2.dpad_right) targetElevatorPosition = ElevatorPositions.MEDIUM;
+            else if(gamepad2.dpad_up) targetElevatorPosition = ElevatorPositions.HIGH;
+            else if(gamepad2.dpad_left) targetElevatorPosition = ElevatorPositions.GROUND;
+            else robot.moveElevator(0);
+            if(usePot)
+                errorElevator = robot.usePot(targetElevatorPosition, errorElevator);
+            else errorElevator = robot.moveToPosition(targetElevatorPosition, errorElevator);
+            robot.showPotVoltage();
+            robot.showElevatorTicks();
             // **************************
             // *     CONTROL INTAKE     *
             // **************************
             if(gamepad2.a) robot.openIntake();
             else robot.closeIntake();
+            telemetry.addData("Using pot", usePot);
             telemetry.update();
         }
     }
